@@ -4,3 +4,21 @@ pub mod address;
 pub mod data;
 pub mod error;
 pub mod packet;
+
+/// Constructs directly `Packet`.
+#[macro_export]
+macro_rules! osc_packet {
+    ($addr:expr) => {
+        PacketBuilder::new($addr).map(|b| b.build())
+    };
+    ($addr:expr => { $($args:expr),* $(,)? }) => {
+        PacketBuilder::new($addr).map(|mut b| {
+            let arguments = vec![
+                $($args.into()),*,
+            ];
+            b.set_arguments(arguments);
+            b.build()
+        })
+    };
+
+}

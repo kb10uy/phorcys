@@ -1,8 +1,9 @@
 //! Validation and parse of OSC Address.
 
-enum Path {}
+/// Address manipulation.
+pub enum Address {}
 
-impl Path {
+impl Address {
     /// Validate
     pub fn is_valid(path: &str) -> bool {
         path.starts_with('/') && path.is_ascii()
