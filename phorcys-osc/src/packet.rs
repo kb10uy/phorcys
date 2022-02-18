@@ -59,7 +59,28 @@ impl Packet {
 }
 
 impl Packet {
+    /// Deserializes bytes into packet.
+    pub fn deserialize(bytes: Vec<u8>) -> Result<Packet> {
+        let (address, tag, argument_bytes) = Packet::split_bytes(bytes)?;
+
+        let mut arguments = vec![];
+        let mut rest_tag = &tag.as_bytes()[1..];
+        let mut rest_argument = &argument_bytes[..];
+        while !rest_tag.is_empty() {
+            let (arg, next_tag, next_argument) = Packet::parse_argument(rest_tag, rest_argument)?;
+            rest_tag = next_tag;
+            rest_argument = next_argument;
+            arguments.push(arg);
+        }
+
+        Ok(Packet {
+            address: address.into_boxed_str(),
+            arguments: arguments.into_boxed_slice(),
+        })
+    }
+
     /// Splits raw bytes array into address, types tag, and argument data.
+    /// Returned address and tag are guaranteed that they have correct leaders and consist of only ASCII-bytes.
     fn split_bytes(mut bytes: Vec<u8>) -> Result<(String, String, Vec<u8>)> {
         // Check alignment
         if bytes.len() % 4 != 0 {
@@ -76,6 +97,9 @@ impl Packet {
         let address: Vec<u8> = (&bytes[..address_first_nul]).into();
         let address = String::from_utf8(address).map_err(|_| Error::InvalidAddress)?;
         let address_aligned = Value::aligned_length(address_first_nul + 1);
+        if !Address::is_valid(&address) {
+            return Err(Error::InvalidAddress);
+        }
 
         // Slice types tag
         let rest_bytes = &rest_bytes[address_aligned..];
@@ -87,11 +111,255 @@ impl Packet {
         let tag: Vec<u8> = (&bytes[..tag_first_nul]).into();
         let tag = String::from_utf8(tag).map_err(|_| Error::InvalidTag)?;
         let tag_aligned = Value::aligned_length(tag_first_nul + 1);
+        if !tag.starts_with(',') || !tag.is_ascii() {
+            return Err(Error::InvalidTag);
+        }
 
         // Cut out arguments
         let arguments_left = bytes.split_off(address_aligned + tag_aligned);
 
         Ok((address, tag, arguments_left))
+    }
+
+    /// Parses an argument.
+    fn parse_argument<'t, 'a>(
+        rest_tag: &'t [u8],
+        rest_argument: &'a [u8],
+    ) -> Result<(Value, &'t [u8], &'a [u8])> {
+        if rest_tag.is_empty() {
+            return Err(Error::IllegalStructure);
+        }
+
+        match rest_tag[0] {
+            b'N' => Ok((Value::Nil, &rest_tag[1..], rest_argument)),
+            b'I' => Ok((Value::Infinitum, &rest_tag[1..], rest_argument)),
+            b'T' => Ok((Value::Boolean(true), &rest_tag[1..], rest_argument)),
+            b'F' => Ok((Value::Boolean(false), &rest_tag[1..], rest_argument)),
+            b'c' => {
+                if rest_argument.len() < 4 {
+                    return Err(Error::NotEnoughData);
+                }
+
+                Ok((
+                    Value::Character(u32::from_be_bytes([
+                        rest_argument[0],
+                        rest_argument[1],
+                        rest_argument[2],
+                        rest_argument[3],
+                    ]) as u8 as char),
+                    &rest_tag[1..],
+                    &rest_argument[4..],
+                ))
+            }
+            b'i' => {
+                if rest_argument.len() < 4 {
+                    return Err(Error::NotEnoughData);
+                }
+
+                Ok((
+                    Value::Int32(i32::from_be_bytes([
+                        rest_argument[0],
+                        rest_argument[1],
+                        rest_argument[2],
+                        rest_argument[3],
+                    ])),
+                    &rest_tag[1..],
+                    &rest_argument[4..],
+                ))
+            }
+            b'h' => {
+                if rest_argument.len() < 8 {
+                    return Err(Error::NotEnoughData);
+                }
+
+                Ok((
+                    Value::Int64(i64::from_be_bytes([
+                        rest_argument[0],
+                        rest_argument[1],
+                        rest_argument[2],
+                        rest_argument[3],
+                        rest_argument[4],
+                        rest_argument[5],
+                        rest_argument[6],
+                        rest_argument[7],
+                    ])),
+                    &rest_tag[1..],
+                    &rest_argument[8..],
+                ))
+            }
+            b'f' => {
+                if rest_argument.len() < 4 {
+                    return Err(Error::NotEnoughData);
+                }
+
+                Ok((
+                    Value::Float32(f32::from_be_bytes([
+                        rest_argument[0],
+                        rest_argument[1],
+                        rest_argument[2],
+                        rest_argument[3],
+                    ])),
+                    &rest_tag[1..],
+                    &rest_argument[4..],
+                ))
+            }
+            b'd' => {
+                if rest_argument.len() < 8 {
+                    return Err(Error::NotEnoughData);
+                }
+
+                Ok((
+                    Value::Float64(f64::from_be_bytes([
+                        rest_argument[0],
+                        rest_argument[1],
+                        rest_argument[2],
+                        rest_argument[3],
+                        rest_argument[4],
+                        rest_argument[5],
+                        rest_argument[6],
+                        rest_argument[7],
+                    ])),
+                    &rest_tag[1..],
+                    &rest_argument[8..],
+                ))
+            }
+            b'r' => {
+                if rest_argument.len() < 4 {
+                    return Err(Error::NotEnoughData);
+                }
+
+                Ok((
+                    Value::Color([
+                        rest_argument[0],
+                        rest_argument[1],
+                        rest_argument[2],
+                        rest_argument[3],
+                    ]),
+                    &rest_tag[1..],
+                    &rest_argument[4..],
+                ))
+            }
+            b'm' => {
+                if rest_argument.len() < 4 {
+                    return Err(Error::NotEnoughData);
+                }
+
+                Ok((
+                    Value::MidiMessage([
+                        rest_argument[0],
+                        rest_argument[1],
+                        rest_argument[2],
+                        rest_argument[3],
+                    ]),
+                    &rest_tag[1..],
+                    &rest_argument[4..],
+                ))
+            }
+            b't' => {
+                if rest_argument.len() < 8 {
+                    return Err(Error::NotEnoughData);
+                }
+
+                Ok((
+                    Value::TimeTag(u64::from_be_bytes([
+                        rest_argument[0],
+                        rest_argument[1],
+                        rest_argument[2],
+                        rest_argument[3],
+                        rest_argument[4],
+                        rest_argument[5],
+                        rest_argument[6],
+                        rest_argument[7],
+                    ])),
+                    &rest_tag[1..],
+                    &rest_argument[8..],
+                ))
+            }
+            b's' => {
+                if rest_argument.len() < 4 {
+                    return Err(Error::NotEnoughData);
+                }
+
+                let first_nul = match rest_argument.iter().position(|&b| b == 0x00) {
+                    None => return Err(Error::NotTerminated),
+                    Some(i) => i,
+                };
+                let string: Vec<u8> = (&rest_argument[..first_nul]).into();
+                let string = String::from_utf8(string).map_err(|_| Error::InvalidAddress)?;
+                let string_aligned = Value::aligned_length(first_nul + 1);
+
+                Ok((
+                    Value::String(string),
+                    &rest_tag[1..],
+                    &rest_argument[string_aligned..],
+                ))
+            }
+            b'S' => {
+                if rest_argument.len() < 4 {
+                    return Err(Error::NotEnoughData);
+                }
+
+                let first_nul = match rest_argument.iter().position(|&b| b == 0x00) {
+                    None => return Err(Error::NotTerminated),
+                    Some(i) => i,
+                };
+                let string: Vec<u8> = (&rest_argument[..first_nul]).into();
+                let string = String::from_utf8(string).map_err(|_| Error::InvalidAddress)?;
+                let string_aligned = Value::aligned_length(first_nul + 1);
+
+                Ok((
+                    Value::Alternative(string),
+                    &rest_tag[1..],
+                    &rest_argument[string_aligned..],
+                ))
+            }
+            b'b' => {
+                if rest_argument.len() < 4 {
+                    return Err(Error::NotEnoughData);
+                }
+
+                let length = i32::from_be_bytes([
+                    rest_argument[0],
+                    rest_argument[1],
+                    rest_argument[2],
+                    rest_argument[3],
+                ]) as usize;
+                let aligned_length = Value::aligned_length(length);
+
+                if rest_argument.len() < aligned_length + 4 {
+                    return Err(Error::NotEnoughData);
+                }
+                let blob = (&rest_argument[4..(length + 4)]).into();
+
+                Ok((
+                    Value::Blob(blob),
+                    &rest_tag[1..],
+                    &rest_argument[aligned_length..],
+                ))
+            }
+            b'[' => {
+                let mut values = vec![];
+                let mut inner_rest_tag = &rest_tag[1..];
+                let mut inner_rest_argument = rest_argument;
+
+                loop {
+                    if rest_argument.is_empty() {
+                        break Err(Error::IllegalStructure);
+                    }
+                    if rest_argument[0] == b']' {
+                        break Ok((Value::Array(values), &rest_tag[1..], rest_argument));
+                    }
+
+                    let (arg, next_tag, next_argument) =
+                        Packet::parse_argument(inner_rest_tag, inner_rest_argument)?;
+                    inner_rest_tag = next_tag;
+                    inner_rest_argument = next_argument;
+                    values.push(arg);
+                }
+            }
+            b']' => Err(Error::IllegalStructure),
+            otherwise => Err(Error::UnknownType(otherwise)),
+        }
     }
 }
 

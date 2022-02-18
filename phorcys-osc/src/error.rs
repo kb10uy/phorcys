@@ -23,6 +23,18 @@ pub enum Error {
     /// Invalid tag form.
     #[error("Invalid tag")]
     InvalidTag,
+
+    /// Type tag has unknown type.
+    #[error("Unknown data type: {0}")]
+    UnknownType(u8),
+
+    /// Shortage in argument data bytes.
+    #[error("Not enough argument data")]
+    NotEnoughData,
+
+    /// Illegal types tag detected.
+    #[error("Type tag structure is illegal")]
+    IllegalStructure,
 }
 
 /// Result type shorthand with `crate::Error`.
