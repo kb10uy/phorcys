@@ -7,6 +7,7 @@ use crate::{
 };
 
 /// Represents an immutable OSC packet.
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Packet {
     address: Box<str>,
     arguments: Box<[Value]>,
@@ -108,7 +109,7 @@ impl Packet {
             Some(0) => return Err(Error::InvalidTag),
             Some(i) => i,
         };
-        let tag: Vec<u8> = (&bytes[..tag_first_nul]).into();
+        let tag: Vec<u8> = (&rest_bytes[..tag_first_nul]).into();
         let tag = String::from_utf8(tag).map_err(|_| Error::InvalidTag)?;
         let tag_aligned = Value::aligned_length(tag_first_nul + 1);
         if !tag.starts_with(',') || !tag.is_ascii() {
@@ -402,5 +403,51 @@ impl PacketBuilder {
     pub fn set_arguments(&mut self, arguments: impl Into<Vec<Value>>) -> &mut Self {
         self.arguments = arguments.into();
         self
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{error::Error, packet::Packet};
+
+    /// Ensures that `Deserializer` processes valid bytes.
+    /// The packet has only address.
+    #[test]
+    fn test_deserializer_simple() {
+        let bytes = vec![
+            b'/', b'p', b'a', b't', b'h', 0x00, 0x00, 0x00, // Address
+            b',', 0x00, 0x00, 0x00, //Tag
+        ];
+
+        let packet = Packet::deserialize(bytes).expect("Deserialize failed");
+        let (address, arguments) = packet.split_into();
+        assert_eq!(address, "/path");
+        assert_eq!(arguments, &[]);
+    }
+
+    /// Ensures that `Deserializer` rejects invalid address.
+    /// The packet has only address.
+    #[test]
+    fn test_deserializer_error_address() {
+        let bytes = vec![
+            b'X', b'p', b'a', b't', b'h', 0x00, 0x00, 0x00, // Address
+            b',', 0x00, 0x00, 0x00, //Tag
+        ];
+
+        let packet = Packet::deserialize(bytes);
+        assert_eq!(packet, Err(Error::InvalidAddress));
+    }
+
+    /// Ensures that `Deserializer` rejects invalid address.
+    /// The packet has only address.
+    #[test]
+    fn test_deserializer_error_tag() {
+        let bytes = vec![
+            b'/', b'p', b'a', b't', b'h', 0x00, 0x00, 0x00, // Address
+            b'/', 0x00, 0x00, 0x00, //Tag
+        ];
+
+        let packet = Packet::deserialize(bytes);
+        assert_eq!(packet, Err(Error::InvalidTag));
     }
 }
