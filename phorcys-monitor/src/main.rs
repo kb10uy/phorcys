@@ -23,6 +23,6 @@ async fn main() -> Result<()> {
                 continue;
             }
         };
-        info!("Packet: {:?}", packet);
+        println!("Packet: {:?}", packet);
     }
 }
