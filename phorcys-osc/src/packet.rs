@@ -50,8 +50,48 @@ impl Packet {
         serialized_bytes.append(&mut type_tags);
 
         // Data
+        for arg in Vec::from(self.arguments) {
+            arg.write_aligned_into(&mut serialized_bytes);
+        }
 
         serialized_bytes.into_boxed_slice()
+    }
+}
+
+impl Packet {
+    /// Splits raw bytes array into address, types tag, and argument data.
+    fn split_bytes(mut bytes: Vec<u8>) -> Result<(String, String, Vec<u8>)> {
+        // Check alignment
+        if bytes.len() % 4 != 0 {
+            return Err(Error::UnalignedData);
+        }
+
+        // Slice address
+        let rest_bytes = &bytes[..];
+        let address_first_nul = match rest_bytes.iter().position(|&b| b == 0x00) {
+            None => return Err(Error::NotTerminated),
+            Some(0) => return Err(Error::InvalidAddress),
+            Some(i) => i,
+        };
+        let address: Vec<u8> = (&bytes[..address_first_nul]).into();
+        let address = String::from_utf8(address).map_err(|_| Error::InvalidAddress)?;
+        let address_aligned = Value::aligned_length(address_first_nul + 1);
+
+        // Slice types tag
+        let rest_bytes = &rest_bytes[address_aligned..];
+        let tag_first_nul = match rest_bytes.iter().position(|&b| b == 0x00) {
+            None => return Err(Error::NotTerminated),
+            Some(0) => return Err(Error::InvalidTag),
+            Some(i) => i,
+        };
+        let tag: Vec<u8> = (&bytes[..tag_first_nul]).into();
+        let tag = String::from_utf8(tag).map_err(|_| Error::InvalidTag)?;
+        let tag_aligned = Value::aligned_length(tag_first_nul + 1);
+
+        // Cut out arguments
+        let arguments_left = bytes.split_off(address_aligned + tag_aligned);
+
+        Ok((address, tag, arguments_left))
     }
 }
 
@@ -67,7 +107,7 @@ impl PacketBuilder {
     pub fn new(path: impl Into<String>) -> Result<PacketBuilder> {
         let path = path.into();
         if !Address::is_valid(&path) {
-            return Err(Error::InvalidPath);
+            return Err(Error::InvalidAddress);
         }
 
         Ok(PacketBuilder {

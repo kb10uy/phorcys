@@ -33,6 +33,9 @@ pub enum Value {
     /// MIDI message `m`.
     MidiMessage([u8; 4]),
 
+    /// OSC time tag `t`.
+    TimeTag(u64),
+
     /// String `s`.
     String(String),
 
@@ -61,6 +64,7 @@ impl Value {
             Value::Float64(_) => tag_string.push('d'),
             Value::Color(_) => tag_string.push('r'),
             Value::MidiMessage(_) => tag_string.push('m'),
+            Value::TimeTag(_) => tag_string.push('t'),
             Value::String(_) => tag_string.push('s'),
             Value::Alternative(_) => tag_string.push('S'),
             Value::Blob(_) => tag_string.push('b'),
@@ -87,6 +91,7 @@ impl Value {
             Value::Float64(x) => buffer.extend_from_slice(&x.to_be_bytes()),
             Value::Color(c) => buffer.extend_from_slice(&c),
             Value::MidiMessage(m) => buffer.extend_from_slice(&m),
+            Value::TimeTag(t) => buffer.extend_from_slice(&t.to_be_bytes()),
             Value::String(s) => {
                 let mut aligned = s.into_bytes();
                 aligned.push(0);
@@ -107,11 +112,9 @@ impl Value {
 
 impl Value {
     /// Align the `data` length to multiple of 4.
-    pub fn align_size(data: impl AsRef<[u8]>) -> usize {
-        let data = data.as_ref();
-        let original_length = data.len();
+    pub fn aligned_length(original_length: usize) -> usize {
         let mut words = original_length >> 2;
-        if original_length & 0b1111 != 0 {
+        if original_length % 4 != 0 {
             words += 1;
         }
         words << 2
@@ -120,7 +123,7 @@ impl Value {
     /// Aligns the length `bytes`.
     /// This function will not append NUL terminator.
     pub fn align_bytes(bytes: &mut Vec<u8>) {
-        let aligned_length = Value::align_size(&bytes);
+        let aligned_length = Value::aligned_length(bytes.len());
         for _ in 0..(aligned_length - bytes.len()) {
             bytes.push(0);
         }
