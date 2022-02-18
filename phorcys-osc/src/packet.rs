@@ -408,15 +408,19 @@ impl PacketBuilder {
 
 #[cfg(test)]
 mod test {
-    use crate::{error::Error, packet::Packet};
+    use crate::{
+        error::Error,
+        packet::{Packet, PacketBuilder},
+    };
 
-    /// Ensures that `Deserializer` processes valid bytes.
+    /// Ensures that `Packet::deserialize()` processes valid bytes.
     /// The packet has only address.
     #[test]
     fn test_deserializer_simple() {
         let bytes = vec![
-            b'/', b'p', b'a', b't', b'h', 0x00, 0x00, 0x00, // Address
-            b',', 0x00, 0x00, 0x00, //Tag
+            b'/', b'p', b'a', b't', // Address
+            b'h', 0x00, 0x00, 0x00, // Address
+            b',', 0x00, 0x00, 0x00, // Tag
         ];
 
         let packet = Packet::deserialize(bytes).expect("Deserialize failed");
@@ -425,29 +429,51 @@ mod test {
         assert_eq!(arguments, &[]);
     }
 
-    /// Ensures that `Deserializer` rejects invalid address.
+    /// Ensures that `Packet::deserialize()` rejects invalid address.
     /// The packet has only address.
     #[test]
     fn test_deserializer_error_address() {
         let bytes = vec![
-            b'X', b'p', b'a', b't', b'h', 0x00, 0x00, 0x00, // Address
-            b',', 0x00, 0x00, 0x00, //Tag
+            b'X', b'p', b'a', b't', // Address
+            b'h', 0x00, 0x00, 0x00, // Address
+            b',', 0x00, 0x00, 0x00, // Tag
         ];
 
         let packet = Packet::deserialize(bytes);
         assert_eq!(packet, Err(Error::InvalidAddress));
     }
 
-    /// Ensures that `Deserializer` rejects invalid address.
+    /// Ensures that `Packet::deserialize()` rejects invalid address.
     /// The packet has only address.
     #[test]
     fn test_deserializer_error_tag() {
         let bytes = vec![
-            b'/', b'p', b'a', b't', b'h', 0x00, 0x00, 0x00, // Address
-            b'/', 0x00, 0x00, 0x00, //Tag
+            b'/', b'p', b'a', b't', // Address
+            b'h', 0x00, 0x00, 0x00, // Address
+            b'/', 0x00, 0x00, 0x00, // Tag
         ];
 
         let packet = Packet::deserialize(bytes);
         assert_eq!(packet, Err(Error::InvalidTag));
+    }
+
+    /// Ensures that `Packet::serialize()` processes valid packet.
+    /// The packet has only address.
+    #[test]
+    fn test_serializer_simple() {
+        let packet = PacketBuilder::new("/path/to")
+            .expect("Should valid")
+            .build();
+        let packet_bytes = packet.serialize();
+
+        assert_eq!(
+            &packet_bytes[..],
+            &[
+                b'/', b'p', b'a', b't', // Address
+                b'h', b'/', b't', b'o', // Address
+                0x00, 0x00, 0x00, 0x00, // Address
+                b',', 0x00, 0x00, 0x00, // Tag
+            ]
+        );
     }
 }
