@@ -1,0 +1,14 @@
+[package]
+name = "phorcys-monitor"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.53"
+async-std = { version = "1.10.0", features = ["attributes"] }
+flexi_logger = "0.22.3"
+log = "0.4.14"
+phorcys-config = { path = "../phorcys-config" }
+phorcys-osc = { path = "../phorcys-osc" }
