@@ -11,7 +11,7 @@ macro_rules! osc_packet {
     ($addr:literal) => {
         PacketBuilder::new($addr).map(|b| b.build())
     };
-    ($addr:literal { $($args:expr),* $(,)? }) => {
+    ($addr:literal, $($args:expr),* $(,)?) => {
         PacketBuilder::new($addr).map(|mut b| {
             let arguments = vec![
                 $($args.into()),*,

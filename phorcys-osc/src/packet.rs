@@ -8,14 +8,14 @@ use crate::{
 
 /// Represents an immutable OSC packet.
 pub struct Packet {
-    path: Box<str>,
+    address: Box<str>,
     arguments: Box<[Value]>,
 }
 
 impl Packet {
     /// Returns method path.
-    pub fn path(&self) -> &str {
-        &self.path
+    pub fn address(&self) -> &str {
+        &self.address
     }
 
     /// Returns method arguments.
@@ -25,7 +25,33 @@ impl Packet {
 
     /// Consumes itself and splits into owned path and arguments.
     pub fn split_into(self) -> (String, Vec<Value>) {
-        (self.path.into(), self.arguments.into())
+        (self.address.into(), self.arguments.into())
+    }
+
+    /// Serialize this packet.
+    /// Returned bytes **does not** contain the whole size.
+    pub fn serialize(self) -> Box<[u8]> {
+        let mut serialized_bytes = Vec::with_capacity(32);
+
+        // Address
+        let mut terminated_address: Vec<u8> = self.address.into_boxed_bytes().into();
+        terminated_address.push(0);
+        Value::align_bytes(&mut terminated_address);
+        serialized_bytes.append(&mut terminated_address);
+
+        // Tags
+        let mut type_tags: String = ",".into();
+        for arg in &self.arguments[..] {
+            arg.push_type_tag_to(&mut type_tags);
+        }
+        let mut type_tags: Vec<u8> = type_tags.into_bytes().into();
+        type_tags.push(0);
+        Value::align_bytes(&mut type_tags);
+        serialized_bytes.append(&mut type_tags);
+
+        // Data
+
+        serialized_bytes.into_boxed_slice()
     }
 }
 
@@ -53,7 +79,7 @@ impl PacketBuilder {
     /// Builds immutable `Packet`.
     pub fn build(self) -> Packet {
         Packet {
-            path: self.path.into_boxed_str(),
+            address: self.path.into_boxed_str(),
             arguments: self.arguments.into_boxed_slice(),
         }
     }
