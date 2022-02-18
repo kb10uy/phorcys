@@ -1,4 +1,5 @@
 [workspace]
 members = [
     "phorcys-config",
+    "phorcys-osc",
 ]
