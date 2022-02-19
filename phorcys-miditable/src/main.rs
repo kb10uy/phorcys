@@ -1,8 +1,6 @@
 mod app;
 mod command;
-mod midi;
-mod prompt;
-mod vrchat;
+mod table;
 
 use crate::{
     app::{Arguments, CommandKind},

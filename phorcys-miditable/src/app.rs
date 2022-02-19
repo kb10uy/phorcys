@@ -27,6 +27,7 @@ pub enum CommandKind {
     /// Receives OSC packet from VRChat and exports their values.
     Export(ExportCommandArguments),
 
+    /// Starts proxy server between MIDI message and OSC message to VRChat.
     ProxyMidiArguments(ProxyMidiArguments),
 }
 
@@ -50,6 +51,10 @@ pub struct ProxyMidiArguments {
     /// Filename of VRChat OSC API configuration JSON.
     #[clap(short, long)]
     pub avatar_configuration: String,
+
+    /// Surpresses validation of avatar ID.
+    #[clap(short = 'N', long)]
+    pub no_avatar_validation: bool,
 
     /// Filename of entries table.
     pub entries_table: String,

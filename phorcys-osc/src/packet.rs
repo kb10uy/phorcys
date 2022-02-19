@@ -367,20 +367,19 @@ impl Packet {
 /// Builder object for `Packet`.
 #[derive(Debug, Clone)]
 pub struct PacketBuilder {
-    path: String,
+    address: String,
     arguments: Vec<Value>,
 }
 
 impl PacketBuilder {
     /// Creates new builder.
-    pub fn new(path: impl Into<String>) -> Result<PacketBuilder> {
-        let path = path.into();
-        if !Address::is_valid(&path) {
+    pub fn new(address: &str) -> Result<PacketBuilder> {
+        if !Address::is_valid(&address) {
             return Err(Error::InvalidAddress);
         }
 
         Ok(PacketBuilder {
-            path,
+            address: address.into(),
             arguments: vec![],
         })
     }
@@ -388,19 +387,19 @@ impl PacketBuilder {
     /// Builds immutable `Packet`.
     pub fn build(self) -> Packet {
         Packet {
-            address: self.path.into_boxed_str(),
+            address: self.address.into_boxed_str(),
             arguments: self.arguments.into_boxed_slice(),
         }
     }
 
     /// Pushes an argument for packet.
-    pub fn push_argument(&mut self, argument: Value) -> &mut Self {
+    pub fn push_argument(mut self, argument: Value) -> Self {
         self.arguments.push(argument);
         self
     }
 
     /// Replaces completely arguments with given those.
-    pub fn set_arguments(&mut self, arguments: impl Into<Vec<Value>>) -> &mut Self {
+    pub fn set_arguments(mut self, arguments: impl Into<Vec<Value>>) -> Self {
         self.arguments = arguments.into();
         self
     }
