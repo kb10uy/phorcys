@@ -7,5 +7,9 @@
 ## phorcys-config
 `phorcys-config` defines configuration JSON types.
 
-## phorcys-monitor
-`phorcys-monitor` is very simple monitoring application for watching packets from VRChat.
+## phorcys-examples
+`phorcys-examples` contains some example application using crates above.
+You can try them like this: `cargo run --example monitor`.
+
+## phorcys-miditable
+`phorcys-miditable` converts MIDI message into OSC packets using VRChat's avatar configuration JSON and TOML-defined parameter table.
