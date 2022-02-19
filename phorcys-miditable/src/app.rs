@@ -28,7 +28,7 @@ pub enum CommandKind {
     Export(ExportCommandArguments),
 
     /// Starts proxy server between MIDI message and OSC message to VRChat.
-    ProxyMidiArguments(ProxyMidiArguments),
+    ProxyMidi(ProxyMidiArguments),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]

@@ -17,7 +17,7 @@ use async_std::{
     task::{sleep, spawn},
 };
 use futures::try_join;
-use log::{debug, error, warn};
+use log::{error, info, trace, warn};
 use midir::MidiInput;
 use midly::{live::LiveEvent, MidiMessage};
 use phorcys_config::{Configuration as VrcConfig, Parameter as VrcParameter};
@@ -82,6 +82,10 @@ async fn midi_worker(midi_port: usize, tx: Sender<(u8, u8)>) -> Result<()> {
         bail!("Invalid device index");
     }
 
+    info!(
+        "Started to watch MIDI input \"{}\"",
+        midi_client.port_name(&ports[midi_port])?
+    );
     let _input_port = midi_client.connect(
         &ports[midi_port],
         "phorcys-miditable-input",
@@ -99,18 +103,20 @@ async fn osc_worker(context: Arc<Context>, rx: Receiver<(u8, u8)>) -> Result<()>
     while let Ok((channel, key)) = rx.recv() {
         spawn(process_midi_to_entry(context.clone(), channel, key));
     }
-    todo!();
+    Ok(())
 }
 
 /// Called from transfered MIDI message.
-async fn process_midi_to_entry(context: Arc<Context>, channel: u8, key: u8) -> Result<()> {
+async fn process_midi_to_entry(context: Arc<Context>, channel: u8, key: u8) {
+    trace!("Trying MIDI message: Ch.{:02} {}", channel, key);
+
     let entry = context
         .table_entries
         .get(&(None, key))
         .or_else(|| context.table_entries.get(&(Some(channel), key)));
     let entry = match entry {
         Some(e) => e,
-        None => return Ok(()),
+        None => return,
     };
     for (param_name, value) in &entry.parameters {
         let target_param = match context.avatar_parameters.get(param_name) {
@@ -139,14 +145,24 @@ async fn process_midi_to_entry(context: Arc<Context>, channel: u8, key: u8) -> R
                 continue;
             }
         };
-        let packet = OscPacketBuilder::new(target_address)?
-            .push_argument(param_value)
-            .build()
-            .serialize();
-        context.send_socket.send(&packet).await?;
-    }
 
-    Ok(())
+        let packet = match OscPacketBuilder::new(target_address) {
+            Ok(b) => b.push_argument(param_value).build(),
+            Err(e) => {
+                warn!("Failed to construct OSC packet: {}", e);
+                continue;
+            }
+        };
+        match context.send_socket.send(&packet.serialize()).await {
+            Ok(_) => {
+                info!("Sent OSC packet: \"{}\" <- {:?}", target_address, value);
+            }
+            Err(e) => {
+                warn!("Failed to send OSC packet to VRChat: {}", e);
+                continue;
+            }
+        }
+    }
 }
 
 /// MIDI message callback.
@@ -158,7 +174,7 @@ fn on_midi_message(timestamp: u64, message: &[u8], tx: &mut Sender<(u8, u8)>) {
             return;
         }
     };
-    debug!("MIDI Event: [@{:12}] {:?}", timestamp, event);
+    trace!("MIDI Event: [@{:12}] {:?}", timestamp, event);
 
     match event {
         LiveEvent::Midi { channel, message } => match message {

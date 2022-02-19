@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
     match arguments.command {
         CommandKind::ListMidiDevices => list_midi_devices()?,
         CommandKind::Export(args) => export_values(args).await?,
-        CommandKind::ProxyMidiArguments(args) => proxy_midi(args).await?,
+        CommandKind::ProxyMidi(args) => proxy_midi(args).await?,
     }
 
     Ok(())
