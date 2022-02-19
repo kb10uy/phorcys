@@ -408,6 +408,7 @@ impl PacketBuilder {
 #[cfg(test)]
 mod test {
     use crate::{
+        data::Value,
         error::Error,
         packet::{Packet, PacketBuilder},
     };
@@ -472,6 +473,27 @@ mod test {
                 b'h', b'/', b't', b'o', // Address
                 0x00, 0x00, 0x00, 0x00, // Address
                 b',', 0x00, 0x00, 0x00, // Tag
+            ]
+        );
+    }
+
+    /// Ensures that `Packet::serialize()` processes valid packet.
+    #[test]
+    fn test_serializer_params1() {
+        let packet = PacketBuilder::new("/path/to")
+            .expect("Should valid")
+            .push_argument(Value::Boolean(true))
+            .push_argument(Value::Boolean(false))
+            .build();
+        let packet_bytes = packet.serialize();
+
+        assert_eq!(
+            &packet_bytes[..],
+            &[
+                b'/', b'p', b'a', b't', // Address
+                b'h', b'/', b't', b'o', // Address
+                0x00, 0x00, 0x00, 0x00, // Address
+                b',', b'T', b'F', 0x00, // Tag
             ]
         );
     }

@@ -128,6 +128,7 @@ async fn process_midi_to_entry(context: Arc<Context>, channel: u8, key: u8) {
         Some(e) => e,
         None => return,
     };
+    info!("Sending entry \"{}\"", entry.name);
     for (param_name, value) in &entry.parameters {
         let target_param = match context.avatar_parameters.get(param_name) {
             Some(param) => param,
