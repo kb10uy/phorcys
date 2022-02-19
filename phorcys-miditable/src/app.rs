@@ -12,18 +12,47 @@ use phorcys_osc::data::Value;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
 #[clap(author, version)]
 pub struct Arguments {
-    /// Specifies socket addresses for sending packets to VRChat.
-    #[clap(short, long, default_value = "127.0.0.1:9000")]
-    pub send_address: SocketAddr,
+    /// Specifies function to execute.
+    #[clap(subcommand)]
+    pub command: CommandKind,
+}
 
-    /// Specifies socket addresses for receiving packets from VRChat.
+/// Subcommands.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
+#[clap(author, version)]
+pub enum CommandKind {
+    /// Lists all the available MIDI input devices.
+    ListMidiDevices,
+
+    /// Receives OSC packet from VRChat and exports their values.
+    Export(ExportCommandArguments),
+
+    ProxyMidiArguments(ProxyMidiArguments),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
+pub struct ExportCommandArguments {
+    /// Socket addresses for receiving packets from VRChat.
     #[clap(short, long, default_value = "127.0.0.1:9001")]
     pub receive_address: SocketAddr,
+}
 
-    /// Specifies the MIDI input device for use.
-    /// If not given or index is out of bound, it will list available devices.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
+pub struct ProxyMidiArguments {
+    /// Socket addresses for sending packets to VRChat.
+    #[clap(short, long, default_value = "127.0.0.1:9001")]
+    pub send_address: SocketAddr,
+
+    /// MIDI input device number for use.
+    #[clap(short, long, default_value = "0")]
+    pub midi_port: usize,
+
+    /// Filename of VRChat OSC API configuration JSON.
     #[clap(short, long)]
-    pub midi_port: Option<usize>,
+    pub avatar_configuration: String,
+
+    /// Filename of entries table.
+    pub entries_table: String,
 }
 
 #[derive(Debug, Clone)]

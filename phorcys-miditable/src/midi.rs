@@ -6,18 +6,6 @@ use log::{debug, error};
 use midir::MidiInput;
 use midly::live::LiveEvent;
 
-/// Lists all MIDI inputs.
-pub fn list_midi_devices() -> Result<()> {
-    let midi_client = MidiInput::new("phorcys-miditable")?;
-    let ports = midi_client.ports();
-
-    eprintln!("Available MIDI input devices:");
-    for (index, port) in ports.into_iter().enumerate() {
-        println!("{:4}: {}", index, midi_client.port_name(&port)?);
-    }
-    Ok(())
-}
-
 /// Start to receive MIDI message from specified indexed device.
 /// This function never returns.
 pub async fn start_midi_input(device_index: usize) -> Result<()> {
