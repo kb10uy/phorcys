@@ -1,5 +1,12 @@
-use async_std::net::SocketAddr;
+use std::collections::HashMap;
+
+use async_std::{
+    net::SocketAddr,
+    sync::{Arc, Mutex},
+};
 use clap::Parser;
+use phorcys_config::Configuration;
+use phorcys_osc::data::Value;
 
 /// Receives OSC packets from VRChat and provides querying interface.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
@@ -20,4 +27,10 @@ pub struct Arguments {
 }
 
 #[derive(Debug, Clone)]
-pub struct Application {}
+pub struct Application {
+    /// OSC packet source configuration.
+    pub configuration: Arc<Configuration>,
+
+    /// Latest values received from VRChat.
+    pub latest_values: Arc<Mutex<HashMap<String, Value>>>,
+}

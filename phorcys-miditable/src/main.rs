@@ -6,6 +6,7 @@ mod vrchat;
 use crate::{
     app::Arguments,
     midi::{list_midi_devices, start_midi_input},
+    vrchat::start_vrchat_communication,
 };
 
 use anyhow::Result;
@@ -25,6 +26,7 @@ async fn main() -> Result<()> {
         }
     };
 
+    start_vrchat_communication(arguments.send_address, arguments.receive_address).await?;
     start_midi_input(midi_port).await?;
 
     Ok(())
