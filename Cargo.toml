@@ -2,5 +2,5 @@
 members = [
     "phorcys-config",
     "phorcys-osc",
-    "phorcys-monitor",
+    "phorcys-examples",
 ]
