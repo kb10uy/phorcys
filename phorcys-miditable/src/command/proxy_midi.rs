@@ -48,17 +48,27 @@ pub async fn proxy_midi(args: ProxyMidiArguments) -> Result<()> {
     }
 
     // Construct context
+    info!("Using {} as sending socket address", args.send_address);
+    let send_socket = UdpSocket::bind({
+        let mut bind_addr = args.send_address;
+        bind_addr.set_port(0);
+        bind_addr
+    })
+    .await?;
+    send_socket.connect(args.send_address).await?;
+
     let avatar_parameters = avatar_config
         .parameters
         .into_iter()
         .map(|p| (p.name.clone(), p))
         .collect();
+
     let table_entries = parameters_table
         .entries
         .into_iter()
         .map(|p| ((p.midi_channel, p.midi_note), p))
         .collect();
-    let send_socket = UdpSocket::bind(args.send_address).await?;
+
     let context = Arc::new(Context {
         avatar_parameters,
         table_entries,
@@ -153,6 +163,7 @@ async fn process_midi_to_entry(context: Arc<Context>, channel: u8, key: u8) {
                 continue;
             }
         };
+
         match context.send_socket.send(&packet.serialize()).await {
             Ok(_) => {
                 info!("Sent OSC packet: \"{}\" <- {:?}", target_address, value);

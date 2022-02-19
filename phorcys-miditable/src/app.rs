@@ -41,7 +41,7 @@ pub struct ExportCommandArguments {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Parser)]
 pub struct ProxyMidiArguments {
     /// Socket addresses for sending packets to VRChat.
-    #[clap(short, long, default_value = "127.0.0.1:9001")]
+    #[clap(short, long, default_value = "127.0.0.1:9000")]
     pub send_address: SocketAddr,
 
     /// MIDI input device number for use.
