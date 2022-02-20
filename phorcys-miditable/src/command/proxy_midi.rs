@@ -21,7 +21,7 @@ use log::{error, info, trace, warn};
 use midir::MidiInput;
 use midly::{live::LiveEvent, MidiMessage};
 use phorcys_config::{Configuration as VrcConfig, Parameter as VrcParameter};
-use phorcys_osc::{data::Value as OscValue, packet::PacketBuilder as OscPacketBuilder};
+use phorcys_osc::prelude::*;
 
 #[derive(Debug)]
 struct Context {
