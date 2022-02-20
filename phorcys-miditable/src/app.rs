@@ -5,7 +5,7 @@ use async_std::{
     sync::{Arc, Mutex},
 };
 use clap::Parser;
-use phorcys_config::Configuration;
+use phorcys_config::config::Configuration;
 use phorcys_osc::data::Value;
 
 /// Receives OSC packets from VRChat and provides querying interface.

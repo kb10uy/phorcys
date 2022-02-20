@@ -20,7 +20,7 @@ use futures::try_join;
 use log::{error, info, trace, warn};
 use midir::MidiInput;
 use midly::{live::LiveEvent, MidiMessage};
-use phorcys_config::{Configuration as VrcConfig, Parameter as VrcParameter};
+use phorcys_config::prelude::*;
 use phorcys_osc::prelude::*;
 
 #[derive(Debug)]
@@ -35,7 +35,7 @@ pub async fn proxy_midi(args: ProxyMidiArguments) -> Result<()> {
     // Read configs
     let avatar_config_source = read_to_string(args.avatar_configuration).await?;
     let parameters_table_source = read_to_string(args.entries_table).await?;
-    let avatar_config: VrcConfig = serde_json::from_str(&avatar_config_source)?;
+    let avatar_config: VrcConfiguration = serde_json::from_str(&avatar_config_source)?;
     let parameters_table: ParametersTable = toml::from_str(&parameters_table_source)?;
 
     // Avatar ID validation
