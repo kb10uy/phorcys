@@ -1,5 +1,7 @@
 //! Contains manipulation and types about OSC Packet.
 
+use std::str::from_utf8;
+
 use crate::{
     address::Address,
     data::Value,
@@ -9,13 +11,13 @@ use crate::{
 /// Represents an immutable OSC packet.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Packet {
-    address: Box<str>,
+    address: Address,
     arguments: Box<[Value]>,
 }
 
 impl Packet {
     /// Returns method path.
-    pub fn address(&self) -> &str {
+    pub fn address(&self) -> &Address {
         &self.address
     }
 
@@ -35,7 +37,7 @@ impl Packet {
         let mut serialized_bytes = Vec::with_capacity(32);
 
         // Address
-        let mut terminated_address: Vec<u8> = self.address.into_boxed_bytes().into();
+        let mut terminated_address: Vec<u8> = self.address.into_string().into_bytes();
         terminated_address.push(0);
         Value::align_bytes(&mut terminated_address);
         serialized_bytes.append(&mut terminated_address);
@@ -75,14 +77,14 @@ impl Packet {
         }
 
         Ok(Packet {
-            address: address.into_boxed_str(),
+            address: address,
             arguments: arguments.into_boxed_slice(),
         })
     }
 
     /// Splits raw bytes array into address, types tag, and argument data.
     /// Returned address and tag are guaranteed that they have correct leaders and consist of only ASCII-bytes.
-    fn split_bytes(mut bytes: Vec<u8>) -> Result<(String, String, Vec<u8>)> {
+    fn split_bytes(mut bytes: Vec<u8>) -> Result<(Address, String, Vec<u8>)> {
         // Check alignment
         if bytes.len() % 4 != 0 {
             return Err(Error::UnalignedData);
@@ -95,12 +97,10 @@ impl Packet {
             Some(0) => return Err(Error::InvalidAddress),
             Some(i) => i,
         };
-        let address: Vec<u8> = (&bytes[..address_first_nul]).into();
-        let address = String::from_utf8(address).map_err(|_| Error::InvalidAddress)?;
+        let address = from_utf8(&bytes[..address_first_nul])
+            .map_err(|_| Error::InvalidAddress)
+            .and_then(Address::new)?;
         let address_aligned = Value::aligned_length(address_first_nul + 1);
-        if !Address::is_valid(&address) {
-            return Err(Error::InvalidAddress);
-        }
 
         // Slice types tag
         let rest_bytes = &rest_bytes[address_aligned..];
@@ -367,19 +367,15 @@ impl Packet {
 /// Builder object for `Packet`.
 #[derive(Debug, Clone)]
 pub struct PacketBuilder {
-    address: String,
+    address: Address,
     arguments: Vec<Value>,
 }
 
 impl PacketBuilder {
     /// Creates new builder.
     pub fn new(address: &str) -> Result<PacketBuilder> {
-        if !Address::is_valid(&address) {
-            return Err(Error::InvalidAddress);
-        }
-
         Ok(PacketBuilder {
-            address: address.into(),
+            address: Address::new(address)?,
             arguments: vec![],
         })
     }
@@ -387,7 +383,7 @@ impl PacketBuilder {
     /// Builds immutable `Packet`.
     pub fn build(self) -> Packet {
         Packet {
-            address: self.address.into_boxed_str(),
+            address: self.address,
             arguments: self.arguments.into_boxed_slice(),
         }
     }
