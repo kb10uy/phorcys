@@ -104,8 +104,18 @@ impl Value {
                 Value::align_bytes(&mut aligned);
                 buffer.extend_from_slice(&aligned);
             }
-            Value::Blob(_) => todo!(),
-            Value::Array(_) => todo!(),
+            Value::Blob(mut b) if b.len() < i32::MAX as usize => {
+                let length_bytes = (b.len() as i32).to_be_bytes();
+                Value::align_bytes(&mut b);
+                buffer.extend_from_slice(&length_bytes);
+                buffer.extend_from_slice(&b);
+            }
+            Value::Array(values) => {
+                for v in values {
+                    v.write_aligned_into(buffer);
+                }
+            }
+            _ => unreachable!("Invalid data"),
         }
     }
 }
@@ -175,5 +185,47 @@ impl From<String> for Value {
 impl From<&str> for Value {
     fn from(x: &str) -> Self {
         Value::String(x.into())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Value;
+
+    #[test]
+    fn test_value_length_calculation() {
+        assert_eq!(Value::aligned_length(1), 4);
+        assert_eq!(Value::aligned_length(4), 4);
+        assert_eq!(Value::aligned_length(101), 104);
+    }
+
+    #[test]
+    fn test_aligned_write_null() {
+        let mut buffer = vec![];
+        Value::Nil.write_aligned_into(&mut buffer);
+        Value::Infinitum.write_aligned_into(&mut buffer);
+        Value::Boolean(false).write_aligned_into(&mut buffer);
+        Value::Boolean(true).write_aligned_into(&mut buffer);
+        assert_eq!(buffer, &[]);
+    }
+
+    #[test]
+    fn test_aligned_write() {
+        let mut buffer = vec![];
+        Value::Int32(0x12345678).write_aligned_into(&mut buffer);
+        Value::Int64(0x78ABCDEF01234567).write_aligned_into(&mut buffer);
+        Value::Float32(1.0).write_aligned_into(&mut buffer);
+        Value::Float64(1.0).write_aligned_into(&mut buffer);
+        assert_eq!(
+            buffer,
+            &[
+                0x12, 0x34, 0x56, 0x78, // Int32
+                0x78, 0xAB, 0xCD, 0xEF, // Int64
+                0x01, 0x23, 0x45, 0x67, // Int64
+                0x3F, 0x80, 0x00, 0x00, // Float32
+                0x3F, 0xF0, 0x00, 0x00, // Float64
+                0x00, 0x00, 0x00, 0x00, // Float64
+            ]
+        );
     }
 }
