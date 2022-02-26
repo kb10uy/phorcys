@@ -90,7 +90,7 @@ impl Expression {
                     regex_string.push_str(&regex_escape(&start.to_string()));
                     if start != end {
                         regex_string.push('-');
-                        regex_string.push_str(&regex_escape(&start.to_string()));
+                        regex_string.push_str(&regex_escape(&end.to_string()));
                     }
                 }
                 regex_string.push(']');
@@ -305,6 +305,12 @@ mod test {
     fn test_regex_compilation() {
         let parsed = AddressPattern::compile_to_regex("/aaaa").expect("Should be success");
         let expected = Regex::new(r#"^/aaaa$"#).expect("Should be success");
+        assert_eq!(parsed.to_string(), expected.to_string());
+
+        let parsed = AddressPattern::compile_to_regex("/foo*/com[A-Za-z]{ine,ination}??")
+            .expect("Should be success");
+        let expected =
+            Regex::new(r#"^/foo(?:.*)/com[A-Za-z](?:ine|ination)..$"#).expect("Should be success");
         assert_eq!(parsed.to_string(), expected.to_string());
     }
 }
