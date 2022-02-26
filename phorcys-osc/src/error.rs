@@ -35,6 +35,9 @@ pub enum Error {
     /// Illegal types tag detected.
     #[error("Type tag structure is illegal")]
     IllegalStructure,
+
+    #[error("Invalid address pattern: {0}")]
+    InvalidPattern(String),
 }
 
 /// Result type shorthand with `crate::Error`.

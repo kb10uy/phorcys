@@ -3,5 +3,10 @@ name = "phorcys-osc"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+address-pattern = ["combine", "regex"]
+
 [dependencies]
+combine = { version = "4.6.3", optional = true }
+regex = { version = "1.5.4", optional = true }
 thiserror = "1.0.30"
