@@ -47,7 +47,7 @@ impl Packet {
         for arg in &self.arguments[..] {
             arg.push_type_tag_to(&mut type_tags);
         }
-        let mut type_tags: Vec<u8> = type_tags.into_bytes().into();
+        let mut type_tags: Vec<u8> = type_tags.into_bytes();
         type_tags.push(0);
         Value::align_bytes(&mut type_tags);
         serialized_bytes.append(&mut type_tags);
@@ -77,7 +77,7 @@ impl Packet {
         }
 
         Ok(Packet {
-            address: address,
+            address,
             arguments: arguments.into_boxed_slice(),
         })
     }

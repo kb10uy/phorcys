@@ -188,14 +188,13 @@ fn on_midi_message(timestamp: u64, message: &[u8], tx: &mut Sender<(u8, u8)>) {
     };
     trace!("MIDI Event: [@{:12}] {:?}", timestamp, event);
 
-    match event {
-        LiveEvent::Midi { channel, message } => match message {
+    if let LiveEvent::Midi { channel, message } = event {
+        match message {
             MidiMessage::NoteOn { key, vel } if vel > 0 => {
                 tx.send((channel.into(), key.into()))
                     .expect("MPSC channel error");
             }
             _ => (),
-        },
-        _ => (),
+        }
     }
 }
