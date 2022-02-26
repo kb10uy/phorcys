@@ -1,6 +1,8 @@
 //! Tests the configuration acceptance.
 
-use phorcys_config::config::{Configuration, Parameter, ParameterAddress, ParameterDataType};
+use phorcys_config::vrchat::config::{
+    Configuration, Parameter, ParameterAddress, ParameterDataType,
+};
 use serde_json::from_str;
 
 #[test]
