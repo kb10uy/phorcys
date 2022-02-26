@@ -780,6 +780,7 @@ dependencies = [
  "log",
  "phorcys-config",
  "phorcys-osc",
+ "serde_json",
 ]
 
 [[package]]

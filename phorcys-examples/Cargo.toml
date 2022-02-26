@@ -12,3 +12,4 @@ flexi_logger = "0.22.3"
 log = "0.4.14"
 phorcys-config = { path = "../phorcys-config" }
 phorcys-osc = { path = "../phorcys-osc" }
+serde_json = "1.0.79"
