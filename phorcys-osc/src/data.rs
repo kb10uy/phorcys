@@ -1,5 +1,9 @@
 //! Data types.
 
+/// Represents a time tag.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct TimeTag(pub u64);
+
 /// Represents single data in OSC packet.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Value {
@@ -34,7 +38,7 @@ pub enum Value {
     MidiMessage([u8; 4]),
 
     /// OSC time tag `t`.
-    TimeTag(u64),
+    TimeTag(TimeTag),
 
     /// String `s`.
     String(String),
@@ -91,7 +95,7 @@ impl Value {
             Value::Float64(x) => buffer.extend_from_slice(&x.to_be_bytes()),
             Value::Color(c) => buffer.extend_from_slice(&c),
             Value::MidiMessage(m) => buffer.extend_from_slice(&m),
-            Value::TimeTag(t) => buffer.extend_from_slice(&t.to_be_bytes()),
+            Value::TimeTag(t) => buffer.extend_from_slice(&t.0.to_be_bytes()),
             Value::String(s) => {
                 let mut aligned = s.into_bytes();
                 aligned.push(0);

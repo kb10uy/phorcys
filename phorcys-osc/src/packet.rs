@@ -4,7 +4,7 @@ use std::str::from_utf8;
 
 use crate::{
     address::Address,
-    data::Value,
+    data::{TimeTag, Value},
     error::{Error, Result},
 };
 
@@ -262,7 +262,7 @@ impl Packet {
                 }
 
                 Ok((
-                    Value::TimeTag(u64::from_be_bytes([
+                    Value::TimeTag(TimeTag(u64::from_be_bytes([
                         rest_argument[0],
                         rest_argument[1],
                         rest_argument[2],
@@ -271,7 +271,7 @@ impl Packet {
                         rest_argument[5],
                         rest_argument[6],
                         rest_argument[7],
-                    ])),
+                    ]))),
                     &rest_tag[1..],
                     &rest_argument[8..],
                 ))
