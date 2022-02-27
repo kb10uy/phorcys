@@ -5,7 +5,8 @@
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "build": "webpack --mode production"
+        "build": "webpack --mode production",
+        "lint:script": "eslint ./assets/scripts/**/*.ts"
     },
     "author": "",
     "license": "ISC",
@@ -13,6 +14,8 @@
         "@typescript-eslint/eslint-plugin": "^5.12.1",
         "@typescript-eslint/parser": "^5.12.1",
         "eslint": "^8.10.0",
+        "eslint-config-prettier": "^8.4.0",
+        "prettier": "^2.5.1",
         "ts-loader": "^9.2.6",
         "typescript": "^4.5.5",
         "webpack": "^5.69.1",

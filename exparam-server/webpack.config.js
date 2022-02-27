@@ -7,7 +7,7 @@ const path = require("path");
 module.exports = {
     entry: {
         app: [
-            "./scripts/index.ts",
+            "./assets/scripts/index.ts",
             // "./styles/index.scss",
         ],
     },
