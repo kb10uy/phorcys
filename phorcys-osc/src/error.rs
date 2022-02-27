@@ -12,6 +12,10 @@ pub enum Error {
     #[error("Invalid address")]
     InvalidAddress,
 
+    /// Invalid address pattern.
+    #[error("Invalid address pattern: {0}")]
+    InvalidPattern(String),
+
     /// Given bytes is not aligned.
     #[error("Bytes array not aligned")]
     UnalignedData,
@@ -24,6 +28,10 @@ pub enum Error {
     #[error("Invalid tag")]
     InvalidTag,
 
+    /// Illegal types tag detected.
+    #[error("Type tag structure is illegal")]
+    IllegalStructure,
+
     /// Type tag has unknown type.
     #[error("Unknown data type: {0}")]
     UnknownType(u8),
@@ -32,12 +40,9 @@ pub enum Error {
     #[error("Not enough argument data")]
     NotEnoughData,
 
-    /// Illegal types tag detected.
-    #[error("Type tag structure is illegal")]
-    IllegalStructure,
-
-    #[error("Invalid address pattern: {0}")]
-    InvalidPattern(String),
+    /// Invalid bundle data.
+    #[error("Invalid bundle")]
+    InvalidBundle,
 }
 
 /// Result type shorthand with `crate::Error`.
