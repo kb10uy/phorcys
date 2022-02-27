@@ -4,4 +4,5 @@ members = [
     "phorcys-osc",
     "phorcys-examples",
     "phorcys-miditable",
+    "exparam-server",
 ]
