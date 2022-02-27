@@ -6,19 +6,41 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "build": "webpack --mode production",
-        "lint:script": "eslint ./assets/scripts/**/*.ts"
+        "lint:script": "eslint ./assets/scripts/**/*.ts",
+        "lint:style": "eslint ./assets/styles/**/*.css"
     },
     "author": "",
     "license": "ISC",
+    "browserslist": [
+        "defaults",
+        "> 1%",
+        "last 2 versions"
+    ],
     "devDependencies": {
+        "@emotion/eslint-plugin": "^11.7.0",
+        "@types/react": "^17.0.39",
+        "@types/react-dom": "^17.0.11",
         "@typescript-eslint/eslint-plugin": "^5.12.1",
         "@typescript-eslint/parser": "^5.12.1",
+        "css-loader": "^6.6.0",
         "eslint": "^8.10.0",
         "eslint-config-prettier": "^8.4.0",
+        "mini-css-extract-plugin": "^2.5.3",
+        "postcss": "^8.4.7",
+        "postcss-loader": "^6.2.1",
+        "postcss-preset-env": "^7.4.1",
         "prettier": "^2.5.1",
+        "stylelint": "^14.5.3",
+        "stylelint-config-recess-order": "^3.0.0",
+        "stylelint-config-standard": "^25.0.0",
         "ts-loader": "^9.2.6",
         "typescript": "^4.5.5",
         "webpack": "^5.69.1",
         "webpack-cli": "^4.9.2"
+    },
+    "dependencies": {
+        "@emotion/react": "^11.8.1",
+        "react": "^17.0.2",
+        "react-dom": "^17.0.2"
     }
 }

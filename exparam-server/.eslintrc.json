@@ -4,10 +4,6 @@
         "es6": true
     },
     "parser": "@typescript-eslint/parser",
-    "plugins": ["@typescript-eslint"],
-    "extends": [
-        "eslint:recommended",
-        "plugin:@typescript-eslint/recommended",
-        "prettier"
-    ]
+    "plugins": ["@emotion", "@typescript-eslint"],
+    "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"]
 }

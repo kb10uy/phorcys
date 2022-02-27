@@ -9,7 +9,8 @@
         "moduleResolution": "Node",
         "esModuleInterop": true,
         "module": "CommonJS",
+        "jsx": "react",
         "lib": ["DOM", "ES2021", "DOM.Iterable"]
     },
-    "exclude": ["node_modules", ".eslintrc.js"]
+    "include": ["assets/scripts/**/*"]
 }

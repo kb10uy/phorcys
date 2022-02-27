@@ -1,15 +1,13 @@
 const webpack = require("webpack");
 const path = require("path");
-// const AutoPrefixer = require("autoprefixer");
-// const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+
+const PostCSSPresetEnv = require("postcss-preset-env");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 // const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
     entry: {
-        app: [
-            "./assets/scripts/index.ts",
-            // "./styles/index.scss",
-        ],
+        app: ["./assets/scripts/index.tsx", "./assets/styles/index.pcss"],
     },
 
     output: {
@@ -26,35 +24,31 @@ module.exports = {
         rules: [
             {
                 test: /\.tsx?$/,
-                use: "ts-loader",
                 exclude: /node_modules/,
+                use: "ts-loader",
             },
-            /*
             {
-                test: /\.scss$/,
+                test: /\.p?css$/,
+                exclude: /node_modules|vendor/,
                 use: [
                     MiniCssExtractPlugin.loader,
                     {
                         loader: "css-loader",
                         options: {
-                            sourceMap: false,
-                            importLoaders: 2,
+                            importLoaders: 1,
                             url: false,
                         },
                     },
                     {
                         loader: "postcss-loader",
                         options: {
-                            sourceMap: false,
                             postcssOptions: {
-                                plugins: [AutoPrefixer()],
+                                plugins: [PostCSSPresetEnv({ stage: 1 })],
                             },
                         },
                     },
                 ],
-                exclude: /node_modules|vendor/,
             },
-            */
         ],
     },
 
@@ -72,10 +66,10 @@ module.exports = {
     },
 
     plugins: [
-        /*
         new MiniCssExtractPlugin({
             filename: "[name].css",
         }),
+        /*
         new CopyPlugin({
             patterns: [{ from: "./assets/images", to: "./images" }],
         }),
