@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "noImplicitThis": true,
+        "noImplicitAny": true,
+        "noImplicitOverride": true,
+        "noImplicitReturns": true,
+        "target": "ES2021",
+        "moduleResolution": "Node",
+        "esModuleInterop": true,
+        "module": "CommonJS",
+        "lib": ["DOM", "ES2021", "DOM.Iterable"]
+    },
+    "exclude": ["node_modules", ".eslintrc.js"]
+}
