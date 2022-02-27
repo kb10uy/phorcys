@@ -7,4 +7,4 @@ Data types and ser/de-serialization implementation of [Open Sound Control (OSC)]
 -   [x] OSC Packet Serialization
 -   [x] OSC Packet Deserialization
 -   [x] OSC Address Pattern Analyze and Matching
--   [ ] OSC Bundle
+-   [x] OSC Bundle
