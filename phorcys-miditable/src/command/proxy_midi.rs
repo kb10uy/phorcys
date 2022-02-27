@@ -157,7 +157,7 @@ async fn process_midi_to_entry(context: Arc<Context>, channel: u8, key: u8) {
             }
         };
 
-        let packet = match OscPacketBuilder::new(target_address) {
+        let message = match OscMessageBuilder::new(target_address) {
             Ok(b) => b.push_argument(param_value).build(),
             Err(e) => {
                 warn!("Failed to construct OSC packet: {}", e);
@@ -165,7 +165,7 @@ async fn process_midi_to_entry(context: Arc<Context>, channel: u8, key: u8) {
             }
         };
 
-        match context.send_socket.send(&packet.serialize()).await {
+        match context.send_socket.send(&message.serialize()).await {
             Ok(_) => {
                 info!("Sent OSC packet: \"{}\" <- {:?}", target_address, value);
             }
