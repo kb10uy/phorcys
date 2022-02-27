@@ -63,7 +63,7 @@ impl Message {
 
 impl Message {
     /// Deserializes bytes into packet.
-    pub fn deserialize(bytes: Vec<u8>) -> Result<Message> {
+    pub fn deserialize(bytes: &[u8]) -> Result<Message> {
         let (address, tag, argument_bytes) = Message::split_bytes(bytes)?;
 
         let mut arguments = vec![];
@@ -84,7 +84,7 @@ impl Message {
 
     /// Splits raw bytes array into address, types tag, and argument data.
     /// Returned address and tag are guaranteed that they have correct leaders and consist of only ASCII-bytes.
-    fn split_bytes(mut bytes: Vec<u8>) -> Result<(Address, String, Vec<u8>)> {
+    fn split_bytes(mut bytes: &[u8]) -> Result<(Address, String, &[u8])> {
         // Check alignment
         if bytes.len() % 4 != 0 {
             return Err(Error::UnalignedData);
@@ -117,7 +117,7 @@ impl Message {
         }
 
         // Cut out arguments
-        let arguments_left = bytes.split_off(address_aligned + tag_aligned);
+        let arguments_left = &bytes[(address_aligned + tag_aligned)..];
 
         Ok((address, tag, arguments_left))
     }
@@ -376,7 +376,7 @@ mod test {
             b',', 0x00, 0x00, 0x00, // Tag
         ];
 
-        let packet = Message::deserialize(bytes).expect("Deserialize failed");
+        let packet = Message::deserialize(&bytes).expect("Deserialize failed");
         let (address, arguments) = packet.split_into();
         assert_eq!(address, "/path");
         assert_eq!(arguments, &[]);
@@ -392,7 +392,7 @@ mod test {
             b',', 0x00, 0x00, 0x00, // Tag
         ];
 
-        let packet = Message::deserialize(bytes);
+        let packet = Message::deserialize(&bytes);
         assert_eq!(packet, Err(Error::InvalidAddress));
     }
 
@@ -406,7 +406,7 @@ mod test {
             b'/', 0x00, 0x00, 0x00, // Tag
         ];
 
-        let packet = Message::deserialize(bytes);
+        let packet = Message::deserialize(&bytes);
         assert_eq!(packet, Err(Error::InvalidTag));
     }
 
