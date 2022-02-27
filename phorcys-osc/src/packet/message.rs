@@ -84,7 +84,7 @@ impl Message {
 
     /// Splits raw bytes array into address, types tag, and argument data.
     /// Returned address and tag are guaranteed that they have correct leaders and consist of only ASCII-bytes.
-    fn split_bytes(mut bytes: &[u8]) -> Result<(Address, String, &[u8])> {
+    fn split_bytes(bytes: &[u8]) -> Result<(Address, String, &[u8])> {
         // Check alignment
         if bytes.len() % 4 != 0 {
             return Err(Error::UnalignedData);
