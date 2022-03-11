@@ -1,14 +1,15 @@
 [package]
-name = "exparam-server"
+name = "vrcosc-clock"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.55"
+anyhow = "1.0.56"
 async-std = { version = "1.10.0", features = ["attributes"] }
+clap = { version = "3.1.6", features = ["derive"] }
+flexi_logger = "0.22.3"
 futures = "0.3.21"
-serde = { version = "1.0.136", features = ["derive"] }
-serde_derive = "1.0.79"
-tide = "0.17.0-beta.1"
+phorcys-osc = { path = "../phorcys-osc" }
+time = { version = "0.3.7", features = ["local-offset"] }

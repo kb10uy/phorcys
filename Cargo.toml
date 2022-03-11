@@ -5,4 +5,5 @@ members = [
     "phorcys-examples",
     "phorcys-miditable",
     "exparam-server",
+    "vrcosc-clock",
 ]
