@@ -2119,6 +2119,7 @@ dependencies = [
  "clap",
  "flexi_logger",
  "futures",
+ "log",
  "phorcys-osc",
  "time 0.3.7",
 ]

@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+
 use anyhow::{bail, ensure, Result};
 use clap::Parser;
 use phorcys_osc::prelude::*;
@@ -21,6 +23,10 @@ pub struct Arguments {
     /// The interval of sending data, in seconds.
     #[clap(short, long, default_value="2")]
     pub interval: usize,
+
+    /// The UDP socket address to which vrcosc-clock sends packets.
+    #[clap(short, long, default_value="127.0.0.1:9000")]
+    pub port: SocketAddr,
 }
 
 /// Represents a set of information for a DateTime part.

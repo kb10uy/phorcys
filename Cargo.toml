@@ -7,3 +7,8 @@ members = [
     "exparam-server",
     "vrcosc-clock",
 ]
+
+[profile.production]
+inherits = "release"
+lto = "fat"
+strip = "symbols"
