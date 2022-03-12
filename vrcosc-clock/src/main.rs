@@ -1,4 +1,5 @@
 mod app;
+mod data;
 mod runner;
 
 use crate::{
