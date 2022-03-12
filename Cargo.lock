@@ -2121,7 +2121,9 @@ dependencies = [
  "futures",
  "log",
  "phorcys-osc",
+ "serde",
  "time 0.3.7",
+ "toml",
 ]
 
 [[package]]

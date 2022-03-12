@@ -50,4 +50,7 @@ pub struct Arguments {
     /// The UDP socket address to which vrcosc-clock sends packets.
     #[clap(short, long, default_value = "127.0.0.1:9000")]
     pub port: SocketAddr,
+
+    /// Config file path. If specified, all parts specifined in commandline are ignored. 
+    pub config_file: Option<String>,
 }

@@ -34,13 +34,13 @@ Create a TOML file like below:
 
 # Absolute part example
 [minute]
-path = "/path/to/parameter"
+address = "/path/to/parameter"
 format = "absolute"
 divider = 60
 
 # Relative part example
 [second]
-path = "/path/to/parameter"
+address = "/path/to/parameter"
 format = "relative"
 max_value = 1.0
 ```

@@ -1,5 +1,24 @@
-use anyhow::{bail, ensure, Result};
+use anyhow::{bail, ensure, Context, Result};
 use phorcys_osc::prelude::*;
+use serde::{Deserialize, Serialize};
+
+/// Contains part definitions.
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub struct PartsConfig {
+    pub hour: Option<PartsConfigTable>,
+    pub minute: Option<PartsConfigTable>,
+    pub second: Option<PartsConfigTable>,
+    pub month: Option<PartsConfigTable>,
+    pub day: Option<PartsConfigTable>,
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub struct PartsConfigTable {
+    pub address: String,
+    pub format: String,
+    pub max_value: Option<f32>,
+    pub divider: Option<u8>,
+}
 
 /// Represents a set of information for a DateTime part.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -37,6 +56,31 @@ impl DateTimePart {
             "abs" => ValueFormat::Absolute(parts[2].parse()?),
             "rel" => ValueFormat::Relative(parts[2].parse()?),
             _ => bail!(r#"Invalid sending format type; it should be "abs" or "rel""#),
+        };
+
+        Ok(DateTimePart {
+            target_address,
+            format,
+        })
+    }
+
+    /// Parses from TOML config table.
+    pub fn parse_config_table(table: &PartsConfigTable) -> Result<DateTimePart> {
+        let target_address = OscAddress::new(&table.address)?;
+        let format = match &table.format[..] {
+            "absolute" => {
+                let value = table
+                    .divider
+                    .context("You should specify divider for absolute part")?;
+                ValueFormat::Absolute(value)
+            }
+            "relative" => {
+                let value = table
+                    .max_value
+                    .context("You should specify max_value for relative part")?;
+                ValueFormat::Relative(value)
+            }
+            _ => bail!(r#"Invalid sending format type; it should be "absolute" or "relative""#),
         };
 
         Ok(DateTimePart {
