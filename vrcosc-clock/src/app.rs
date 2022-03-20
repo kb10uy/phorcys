@@ -8,7 +8,7 @@ use clap::Parser;
 pub struct Arguments {
     /// The interval of sending data, in seconds.
     #[clap(short, long, default_value = "2")]
-    pub interval: usize,
+    pub interval: f64,
 
     /// The UDP socket address to which vrcosc-clock sends packets.
     #[clap(short, long, default_value = "127.0.0.1:9000")]
