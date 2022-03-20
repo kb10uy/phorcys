@@ -415,6 +415,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bstr"
+version = "0.2.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba3569f383e8f1598449f1a423e72e99569137b47740b1da11ef19af3d5c3223"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -748,6 +757,15 @@ name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
+
+[[package]]
+name = "erased-serde"
+version = "0.3.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad132dd8d0d0b546348d7d86cb3191aad14b34e5f979781fc005c80d4ac67ffd"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "event-listener"
@@ -1158,6 +1176,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "lua-src"
+version = "544.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7341ba039a781c4982ca20761c55f44e07bfefd496a45b1e929763d88f5fc68b"
+dependencies = [
+ "cc",
+]
+
+[[package]]
+name = "luajit-src"
+version = "210.3.3+resty673aaad"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3201eae65820ee1f1eddc22de04f5c834bce36db20c2672d39d47826b317768e"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "matches"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1209,6 +1245,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5f3c664ced7caa98ccb7ed4c67cd0bd6a6bd8ecedf8b49f38544a4a8e50f0ae"
 dependencies = [
  "rayon",
+]
+
+[[package]]
+name = "mlua"
+version = "0.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29e2194305aa8301d5da9c1c98640047f4219f6b95c190f6860338ab9872b686"
+dependencies = [
+ "bstr",
+ "cc",
+ "erased-serde",
+ "futures-core",
+ "futures-task",
+ "futures-util",
+ "lua-src",
+ "luajit-src",
+ "num-traits",
+ "once_cell",
+ "pkg-config",
+ "rustc-hash",
+ "serde",
 ]
 
 [[package]]
@@ -1609,6 +1666,12 @@ dependencies = [
  "smartcow",
  "smartstring",
 ]
+
+[[package]]
+name = "rustc-hash"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
 name = "rustc_version"
@@ -2120,6 +2183,7 @@ dependencies = [
  "flexi_logger",
  "futures",
  "log",
+ "mlua",
  "phorcys-osc",
  "serde",
  "time 0.3.7",

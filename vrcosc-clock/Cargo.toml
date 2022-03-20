@@ -12,6 +12,7 @@ clap = { version = "3.1.6", features = ["derive"] }
 flexi_logger = "0.22.3"
 futures = "0.3.21"
 log = "0.4.14"
+mlua = { version = "0.7.4", features = ["vendored", "lua54", "async", "send", "serialize"] }
 phorcys-osc = { path = "../phorcys-osc" }
 serde = {version = "1.0.136", features = ["derive"] }
 time = { version = "0.3.7", features = ["local-offset", "formatting"] }
