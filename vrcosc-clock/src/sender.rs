@@ -1,30 +1,47 @@
-use std::{collections::HashMap, str::FromStr, time::Duration};
+use std::{str::FromStr, time::Duration};
 
 use anyhow::{bail, Error, Result};
 use async_std::{
     fs::read_to_string,
     net::{SocketAddr, UdpSocket},
-    path::Path,
     task::sleep,
 };
-use log::{debug, info, trace};
+use log::info;
 use mlua::prelude::*;
 use phorcys_osc::prelude::*;
-use time::{format_description::parse as parse_time_format, OffsetDateTime};
+use time::OffsetDateTime;
 
-#[derive(Debug)]
-pub struct DateTimeSender<'lua> {
-    script_name: String,
-    lua_base: &'lua Lua,
-    elements: HashMap<String, ConversionElement<'lua>>,
-    // functions: LuaTable,
+/// DateTime struct for Lua interop.
+/// Behaves as UserData object in Lua.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct LuaDateTime {
+    hour: u8,
+    minute: u8,
+    second: u8,
+    month: u8,
+    day: u8,
 }
 
-#[derive(Debug)]
-pub struct ConversionElement<'lua> {
-    address: String,
-    value_type: Option<TargetType>,
-    value_function: LuaFunction<'lua>,
+impl LuaUserData for LuaDateTime {
+    fn add_fields<'lua, F: LuaUserDataFields<'lua, Self>>(fields: &mut F) {
+        fields.add_field_method_get("hour", |_, this| Ok(this.hour));
+        fields.add_field_method_get("minute", |_, this| Ok(this.minute));
+        fields.add_field_method_get("second", |_, this| Ok(this.second));
+        fields.add_field_method_get("month", |_, this| Ok(this.month));
+        fields.add_field_method_get("day", |_, this| Ok(this.day));
+    }
+}
+
+impl From<OffsetDateTime> for LuaDateTime {
+    fn from(dt: OffsetDateTime) -> LuaDateTime {
+        LuaDateTime {
+            hour: dt.hour(),
+            minute: dt.minute(),
+            second: dt.second(),
+            month: dt.month() as u8,
+            day: dt.day(),
+        }
+    }
 }
 
 /// Target type of value.
@@ -49,125 +66,127 @@ impl FromStr for TargetType {
     }
 }
 
-impl<'lua> DateTimeSender<'lua> {
-    /// Constructs `DateTimeSender`.
-    pub async fn new(lua: &'lua Lua, filename: impl AsRef<str>) -> Result<DateTimeSender<'lua>> {
-        let filename = filename.as_ref();
-        let source = read_to_string(filename).await?;
+/// Represents an element as a pair of address and function.
+#[derive(Debug)]
+pub struct ConversionElement {
+    /// OSC address to send at.
+    address: String,
 
-        let script_table: LuaValue = lua.load(&source).call(())?;
-        let table = match script_table {
-            LuaValue::Table(t) => t,
-            _ => bail!(
-                "{:?} returned invalid value; a script should return table",
-                filename
-            ),
-        };
+    /// Type hint for number conversion.
+    value_type: Option<TargetType>,
 
-        let mut elements = HashMap::new();
-        for pair in table.pairs::<LuaValue, LuaValue>() {
-            let (key, value) = pair?;
-            let key_string = match key {
-                LuaValue::String(s) => s.to_str()?.to_string(),
-                LuaValue::Integer(i) => i.to_string(),
-                LuaValue::Number(f) => f.to_string(),
-                _ => bail!("Invalid key type: {:?}", key),
-            };
-            let info_table = match value {
-                LuaValue::Table(t) => t,
-                _ => bail!("Convertion element must have a table value"),
-            };
-
-            let address = info_table.get("address")?;
-            let value_type = info_table
-                .get::<_, Option<String>>("value_type")?
-                .map(|s| s.parse())
-                .transpose()?;
-            let value_function = info_table.get("value_function")?;
-            elements.insert(
-                key_string,
-                ConversionElement {
-                    address,
-                    value_type,
-                    value_function,
-                },
-            );
-        }
-
-        Ok(DateTimeSender {
-            script_name: filename.to_string(),
-            lua_base: lua,
-            elements,
-        })
-    }
-
-    /// Executes DateTime conversion via Lua script, and gets OSC messages.
-    pub fn convert(&self, datetime: OffsetDateTime) -> Result<Vec<OscMessage>> {
-        debug!("Converting DateTime for {}", self.script_name);
-
-        let mut messages = Vec::with_capacity(self.elements.len());
-        for (key, element) in &self.elements {
-            trace!("-> {}", key);
-            let dt_table = self.create_datetime_table(datetime)?;
-            let converted_value: LuaValue = element.value_function.call(dt_table)?;
-            let osc_value = DateTimeSender::to_osc_value(&converted_value, element.value_type)?;
-            let message = OscMessageBuilder::new(&element.address)?
-                .push_argument(osc_value)
-                .build();
-            messages.push(message);
-        }
-
-        Ok(messages)
-    }
-
-    /// Creates a DateTime table for conversion element argument.
-    fn create_datetime_table(&self, datetime: OffsetDateTime) -> Result<LuaTable> {
-        let table = self.lua_base.create_table()?;
-        table.set("hour", datetime.hour())?;
-        table.set("minute", datetime.minute())?;
-        table.set("second", datetime.second())?;
-        table.set("month", datetime.month() as u8)?;
-        table.set("day", datetime.day())?;
-        Ok(table)
-    }
-
-    /// Converts `LuaValue` to `OscValue` with type hinting.
-    fn to_osc_value(lua_value: &LuaValue, type_hint: Option<TargetType>) -> Result<OscValue> {
-        let value = match (lua_value, type_hint) {
-            (LuaValue::Integer(v), Some(TargetType::Int) | None) => OscValue::Int32(*v as i32),
-            (LuaValue::Integer(v), Some(TargetType::Float)) => OscValue::Float32(*v as f32),
-            (LuaValue::Number(v), Some(TargetType::Float) | None) => OscValue::Float32(*v as f32),
-            (LuaValue::Number(v), Some(TargetType::Int)) => OscValue::Int32(*v as i32),
-            _ => bail!("Invalid value conversion"),
-        };
-        Ok(value)
-    }
+    /// Lua function to convert DateTime into OSC value.
+    value_function_name: String,
 }
 
-/*
-/// Runs main thread.
-pub async fn run(senders: &[DateTimePartSender], interval: u64, address: SocketAddr) -> Result<()> {
-    let log_format = parse_time_format("[hour]:[minute]:[second]")?;
+/// Provides construction information for Sender.
+pub struct SenderConstructor {
+    /// Script filename to load.
+    pub script_filename: String,
 
-    info!("Using {} as sending socket address", address);
+    /// OSC port of VRChat.
+    pub osc_socket_address: SocketAddr,
+
+    /// Sending interval.
+    pub interval: Duration,
+}
+
+pub async fn run_script(constructor: SenderConstructor) -> Result<()> {
+    let (lua, elements) = convert_table(&constructor.script_filename).await?;
+    info!(
+        "Constructed {} element(s) from script {}",
+        elements.len(),
+        constructor.script_filename
+    );
+
     let send_socket = UdpSocket::bind({
-        let mut bind_addr = address;
+        let mut bind_addr = constructor.osc_socket_address;
         bind_addr.set_port(0);
         bind_addr
     })
     .await?;
-    send_socket.connect(address).await?;
+    send_socket.connect(constructor.osc_socket_address).await?;
 
-    info!("Started to send packets...");
     loop {
-        let now = OffsetDateTime::now_local()?;
-        debug!("Sending {}", now.format(&log_format)?);
+        let now: LuaDateTime = OffsetDateTime::now_local()?.into();
+        let messages: Vec<_> = elements
+            .iter()
+            .map(|e| call_value_function(&lua, e, now))
+            .collect::<Result<_>>()?;
 
-        for sender in senders {
-            let message = sender.construct_packet(now)?.serialize();
-            send_socket.send(&message).await?;
+        for message in messages {
+            send_socket.send(&message.serialize()).await?;
         }
-        sleep(Duration::from_secs(interval)).await;
+
+        sleep(constructor.interval).await;
     }
 }
-*/
+
+/// Constructs conversion elements from Lua table.
+async fn convert_table<'lua>(filename: &str) -> Result<(Lua, Vec<ConversionElement>)> {
+    let script = read_to_string(filename).await?;
+    let lua = Lua::new();
+    let elements_table: LuaTable = lua.load(&script).call(())?;
+
+    let globals = lua.globals();
+    let mut elements = vec![];
+    for pair in elements_table.pairs::<LuaValue, LuaValue>() {
+        let (key, value) = pair?;
+        let info_table = match value {
+            LuaValue::Table(t) => t,
+            _ => bail!("Convertion element must have a table value"),
+        };
+
+        let name = match key {
+            LuaValue::String(s) => s.to_str()?.to_string(),
+            LuaValue::Integer(i) => i.to_string(),
+            LuaValue::Number(f) => f.to_string(),
+            _ => bail!("Invalid key type: {:?}", key),
+        };
+        let address = info_table.get("address")?;
+        let value_type = info_table
+            .get::<_, Option<String>>("value_type")?
+            .map(|s| s.parse())
+            .transpose()?;
+        let value_function_name = format!("vrcosc_clock_{}", name);
+        let value_function: LuaFunction = info_table.get("value_function")?;
+        globals.set(&value_function_name[..], value_function)?;
+
+        elements.push(ConversionElement {
+            address,
+            value_type,
+            value_function_name,
+        });
+    }
+    drop(globals);
+
+    Ok((lua, elements))
+}
+
+fn call_value_function(
+    lua: &Lua,
+    element: &ConversionElement,
+    now: LuaDateTime,
+) -> Result<OscMessage> {
+    let globals = lua.globals();
+    let function: LuaFunction = globals.get(&element.value_function_name[..])?;
+    let value = function.call(now)?;
+
+    let osc_value = into_osc_value(&value, element.value_type)?;
+    let message = OscMessageBuilder::new(&element.address)?
+        .push_argument(osc_value)
+        .build();
+    Ok(message)
+}
+
+/// Converts `LuaValue` to `OscValue` with type hinting.
+fn into_osc_value(lua_value: &LuaValue, type_hint: Option<TargetType>) -> Result<OscValue> {
+    let value = match (lua_value, type_hint) {
+        (LuaValue::Integer(v), Some(TargetType::Int) | None) => OscValue::Int32(*v as i32),
+        (LuaValue::Integer(v), Some(TargetType::Float)) => OscValue::Float32(*v as f32),
+        (LuaValue::Number(v), Some(TargetType::Float) | None) => OscValue::Float32(*v as f32),
+        (LuaValue::Number(v), Some(TargetType::Int)) => OscValue::Int32(*v as i32),
+        _ => bail!("Invalid value conversion"),
+    };
+    Ok(value)
+}
