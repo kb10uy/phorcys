@@ -69,6 +69,9 @@ impl FromStr for TargetType {
 /// Represents an element as a pair of address and function.
 #[derive(Debug)]
 pub struct ConversionElement {
+    /// Part name.
+    name: String,
+
     /// OSC address to send at.
     address: String,
 
@@ -98,6 +101,12 @@ pub async fn run_script(constructor: SenderConstructor) -> Result<()> {
         elements.len(),
         constructor.script_filename
     );
+    for element in &elements {
+        info!(
+            r#"Part "{}" (type: {:?}) will be sent to {}"#,
+            element.name, element.value_type, element.address
+        );
+    }
 
     let send_socket = UdpSocket::bind({
         let mut bind_addr = constructor.osc_socket_address;
@@ -153,6 +162,7 @@ async fn convert_table<'lua>(filename: &str) -> Result<(Lua, Vec<ConversionEleme
         globals.set(&value_function_name[..], value_function)?;
 
         elements.push(ConversionElement {
+            name,
             address,
             value_type,
             value_function_name,
